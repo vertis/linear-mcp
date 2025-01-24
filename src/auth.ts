@@ -14,7 +14,8 @@ export interface TokenData {
 }
 
 export class LinearAuth {
-  private static readonly OAUTH_BASE_URL = 'https://linear.app/oauth';
+  private static readonly OAUTH_AUTH_URL = 'https://linear.app/oauth';
+  private static readonly OAUTH_TOKEN_URL = 'https://api.linear.app';
   private config?: AuthConfig;
   private tokenData?: TokenData;
   private linearClient?: LinearClient;
@@ -33,12 +34,13 @@ export class LinearAuth {
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
       response_type: 'code',
-      scope: 'read,write,issues:create',
+      scope: 'read,write,issues:create,offline_access',
       actor: 'application', // Enable OAuth Actor Authorization
       state: this.generateState(),
+      access_type: 'offline',
     });
 
-    return `${LinearAuth.OAUTH_BASE_URL}/authorize?${params.toString()}`;
+    return `${LinearAuth.OAUTH_AUTH_URL}/authorize?${params.toString()}`;
   }
 
   public async handleCallback(code: string): Promise<void> {
@@ -50,22 +52,27 @@ export class LinearAuth {
     }
 
     try {
-      const response = await fetch(`${LinearAuth.OAUTH_BASE_URL}/token`, {
+      const response = await fetch(`${LinearAuth.OAUTH_TOKEN_URL}/oauth/token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Cline-MCP/1.0.0',
+          'Origin': 'http://localhost:3000'
         },
-        body: new URLSearchParams({
+        body: JSON.stringify({
           grant_type: 'authorization_code',
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
           redirect_uri: this.config.redirectUri,
           code,
-        }).toString(),
+          access_type: 'offline'
+        })
       });
 
       if (!response.ok) {
-        throw new Error(`Token request failed: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Token request failed: ${response.statusText}. Response: ${errorText}`);
       }
 
       const data = await response.json();
@@ -95,21 +102,25 @@ export class LinearAuth {
     }
 
     try {
-      const response = await fetch(`${LinearAuth.OAUTH_BASE_URL}/token`, {
+      const response = await fetch(`${LinearAuth.OAUTH_TOKEN_URL}/oauth/token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Cline-MCP/1.0.0',
+          'Origin': 'http://localhost:3000'
         },
-        body: new URLSearchParams({
+        body: JSON.stringify({
           grant_type: 'refresh_token',
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
-          refresh_token: this.tokenData.refreshToken,
-        }).toString(),
+          refresh_token: this.tokenData.refreshToken
+        })
       });
 
       if (!response.ok) {
-        throw new Error(`Token refresh failed: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Token refresh failed: ${response.statusText}. Response: ${errorText}`);
       }
 
       const data = await response.json();

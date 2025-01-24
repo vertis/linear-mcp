@@ -1,10 +1,10 @@
 import { jest } from '@jest/globals';
 import type { LinearClient } from '@linear/sdk';
 import type { LinearGraphQLClient } from '../graphql/client';
+import { config } from 'dotenv';
 
-// Mock environment variables that might be needed
-process.env.LINEAR_CLIENT_ID = 'test-client-id';
-process.env.LINEAR_CLIENT_SECRET = 'test-client-secret';
+// Load environment variables from .env file
+config();
 
 /**
  * Approaches to fix TypeScript errors with Jest mocks:
