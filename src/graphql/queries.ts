@@ -99,6 +99,25 @@ export const GET_USER_QUERY = gql`
   }
 `;
 
+export const SEARCH_PROJECTS_QUERY = gql`
+  query SearchProjects($filter: ProjectFilter) {
+    projects(filter: $filter) {
+      nodes {
+        id
+        name
+        description
+        url
+        teams {
+          nodes {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const GET_PROJECT_QUERY = gql`
   query GetProject($id: String!) {
     project(id: $id) {

@@ -342,6 +342,65 @@ class LinearServer {
             required: ['id'],
           },
         },
+        {
+          name: 'linear_search_projects',
+          description: 'Search for projects by name',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              name: {
+                type: 'string',
+                description: 'Project name to search for (exact match)',
+              },
+            },
+            required: ['name'],
+          },
+        },
+        {
+          name: 'linear_create_issues',
+          description: 'Create multiple issues at once',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issues: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    title: {
+                      type: 'string',
+                      description: 'Issue title',
+                    },
+                    description: {
+                      type: 'string',
+                      description: 'Issue description',
+                    },
+                    teamId: {
+                      type: 'string',
+                      description: 'Team ID',
+                    },
+                    projectId: {
+                      type: 'string',
+                      description: 'Project ID',
+                      optional: true,
+                    },
+                    labelIds: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                      },
+                      description: 'Label IDs to apply',
+                      optional: true,
+                    }
+                  },
+                  required: ['title', 'description', 'teamId'],
+                },
+                description: 'List of issues to create',
+              },
+            },
+            required: ['issues'],
+          },
+        },
       ],
     }));
 
@@ -370,6 +429,10 @@ class LinearServer {
           return this.handleDeleteIssues(request.params.arguments);
         case 'linear_get_project':
           return this.handleGetProject(request.params.arguments);
+        case 'linear_search_projects':
+          return this.handleSearchProjects(request.params.arguments);
+        case 'linear_create_issues':
+          return this.handleCreateIssues(request.params.arguments);
         default:
           throw new McpError(
             ErrorCode.MethodNotFound,
@@ -787,6 +850,93 @@ class LinearServer {
       throw new McpError(
         ErrorCode.InternalError,
         `Failed to delete issues: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private async handleCreateIssues(args: any): Promise<any> {
+    if (!this.auth.isAuthenticated() || !this.graphqlClient) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'Not authenticated. Call linear_auth first.'
+      );
+    }
+
+    if (this.auth.needsTokenRefresh()) {
+      await this.auth.refreshAccessToken();
+    }
+
+    if (!args.issues || !Array.isArray(args.issues)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'Missing required parameter: issues array'
+      );
+    }
+
+    try {
+      const result = await this.graphqlClient.createIssues(args.issues);
+
+      if (!result.issueCreate.success) {
+        throw new Error('Failed to create issues');
+      }
+
+      const createdIssues = result.issueCreate.issues;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Successfully created ${createdIssues.length} issues:\n` +
+                  createdIssues.map(issue => 
+                    `- ${issue.identifier}: ${issue.title}\n  URL: ${issue.url}`
+                  ).join('\n'),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to create issues: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private async handleSearchProjects(args: any): Promise<any> {
+    if (!this.auth.isAuthenticated() || !this.graphqlClient) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'Not authenticated. Call linear_auth first.'
+      );
+    }
+
+    if (this.auth.needsTokenRefresh()) {
+      await this.auth.refreshAccessToken();
+    }
+
+    if (!args.name) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'Missing required parameter: name'
+      );
+    }
+
+    try {
+      const result = await this.graphqlClient.searchProjects({
+        name: { eq: args.name }
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to search projects: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }

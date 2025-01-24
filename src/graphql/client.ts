@@ -112,6 +112,12 @@ export class LinearGraphQLClient {
     return this.execute(GET_PROJECT_QUERY, { id });
   }
 
+  // Search projects
+  async searchProjects(filter: { name?: { eq: string } }) {
+    const { SEARCH_PROJECTS_QUERY } = await import('./queries.js');
+    return this.execute(SEARCH_PROJECTS_QUERY, { filter });
+  }
+
   // Delete an issue
   async deleteIssue(id: string) {
     const { DELETE_ISSUE_MUTATION } = await import('./mutations.js');
