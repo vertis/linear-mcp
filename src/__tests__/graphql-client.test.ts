@@ -72,33 +72,29 @@ describe('LinearGraphQLClient', () => {
     });
   });
 
-  describe('createIssues', () => {
-    it('should successfully create issues', async () => {
+  describe('createIssue', () => {
+    it('should successfully create an issue', async () => {
       const mockResponse = {
         data: {
           issueCreate: {
             success: true,
-            issues: [
-              {
-                id: 'issue-1',
-                identifier: 'TEST-1',
-                title: 'New Issue',
-                url: 'https://linear.app/test/issue/TEST-1'
-              }
-            ]
+            issue: {
+              id: 'issue-1',
+              identifier: 'TEST-1',
+              title: 'New Issue',
+              url: 'https://linear.app/test/issue/TEST-1'
+            }
           }
         }
       };
 
       mockRawRequest.mockResolvedValueOnce(mockResponse);
 
-      const result = await graphqlClient.createIssues([
-        {
-          title: 'New Issue',
-          description: 'Description',
-          teamId: 'team-1'
-        }
-      ]);
+      const result = await graphqlClient.createIssue({
+        title: 'New Issue',
+        description: 'Description',
+        teamId: 'team-1'
+      });
 
       expect(result).toEqual(mockResponse.data);
       expect(mockRawRequest).toHaveBeenCalled();
@@ -108,13 +104,11 @@ describe('LinearGraphQLClient', () => {
       mockRawRequest.mockRejectedValueOnce(new Error('Creation failed'));
 
       await expect(
-        graphqlClient.createIssues([
-          {
-            title: 'New Issue',
-            description: 'Description',
-            teamId: 'team-1'
-          }
-        ])
+        graphqlClient.createIssue({
+          title: 'New Issue',
+          description: 'Description',
+          teamId: 'team-1'
+        })
       ).rejects.toThrow('GraphQL operation failed: Creation failed');
     });
   });

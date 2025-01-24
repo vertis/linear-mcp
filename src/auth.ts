@@ -1,11 +1,37 @@
 import { LinearClient } from '@linear/sdk';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 
-export interface AuthConfig {
+/**
+ * Solution Attempts:
+ * 
+ * 1. OAuth Flow with Browser (Initial Attempt)
+ * - Used browser redirect and local server for OAuth flow
+ * - Issues: Browser extensions interfering, CORS issues
+ * - Status: Failed - Browser extensions and CORS blocking requests
+ * 
+ * 2. Personal Access Token (Current Attempt)
+ * - Using PAT for initial integration tests
+ * - Simpler approach without browser interaction
+ * - Status: Working - Successfully authenticates and makes API calls
+ * 
+ * 3. Direct OAuth Token Exchange (Current Attempt)
+ * - Using form-urlencoded content type as required by Linear
+ * - Status: In Progress - Testing token exchange
+ */
+
+export interface OAuthConfig {
+  type: 'oauth';
   clientId: string;
   clientSecret: string;
   redirectUri: string;
 }
+
+export interface PersonalAccessTokenConfig {
+  type: 'pat';
+  accessToken: string;
+}
+
+export type AuthConfig = OAuthConfig | PersonalAccessTokenConfig;
 
 export interface TokenData {
   accessToken: string;
@@ -23,10 +49,10 @@ export class LinearAuth {
   constructor() {}
 
   public getAuthorizationUrl(): string {
-    if (!this.config) {
+    if (!this.config || this.config.type !== 'oauth') {
       throw new McpError(
         ErrorCode.InvalidRequest,
-        'Auth config not initialized'
+        'OAuth config not initialized'
       );
     }
 
@@ -44,30 +70,30 @@ export class LinearAuth {
   }
 
   public async handleCallback(code: string): Promise<void> {
-    if (!this.config) {
+    if (!this.config || this.config.type !== 'oauth') {
       throw new McpError(
         ErrorCode.InvalidRequest,
-        'Auth config not initialized'
+        'OAuth config not initialized'
       );
     }
 
     try {
+      const params = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        redirect_uri: this.config.redirectUri,
+        code,
+        access_type: 'offline'
+      });
+
       const response = await fetch(`${LinearAuth.OAUTH_TOKEN_URL}/oauth/token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'User-Agent': 'Cline-MCP/1.0.0',
-          'Origin': 'http://localhost:3000'
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          grant_type: 'authorization_code',
-          client_id: this.config.clientId,
-          client_secret: this.config.clientSecret,
-          redirect_uri: this.config.redirectUri,
-          code,
-          access_type: 'offline'
-        })
+        body: params.toString()
       });
 
       if (!response.ok) {
@@ -94,28 +120,28 @@ export class LinearAuth {
   }
 
   public async refreshAccessToken(): Promise<void> {
-    if (!this.config || !this.tokenData?.refreshToken) {
+    if (!this.config || this.config.type !== 'oauth' || !this.tokenData?.refreshToken) {
       throw new McpError(
         ErrorCode.InvalidRequest,
-        'Auth not initialized or no refresh token available'
+        'OAuth not initialized or no refresh token available'
       );
     }
 
     try {
+      const params = new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        refresh_token: this.tokenData.refreshToken
+      });
+
       const response = await fetch(`${LinearAuth.OAUTH_TOKEN_URL}/oauth/token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'User-Agent': 'Cline-MCP/1.0.0',
-          'Origin': 'http://localhost:3000'
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          grant_type: 'refresh_token',
-          client_id: this.config.clientId,
-          client_secret: this.config.clientSecret,
-          refresh_token: this.tokenData.refreshToken
-        })
+        body: params.toString()
       });
 
       if (!response.ok) {
@@ -142,13 +168,26 @@ export class LinearAuth {
   }
 
   public initialize(config: AuthConfig): void {
-    if (!config.clientId || !config.clientSecret || !config.redirectUri) {
-      throw new McpError(
-        ErrorCode.InvalidParams,
-        'Missing required parameters: clientId, clientSecret, redirectUri'
-      );
+    if (config.type === 'pat') {
+      // Personal Access Token flow
+      this.tokenData = {
+        accessToken: config.accessToken,
+        refreshToken: '', // Not needed for PAT
+        expiresAt: Number.MAX_SAFE_INTEGER, // PATs don't expire
+      };
+      this.linearClient = new LinearClient({
+        accessToken: config.accessToken,
+      });
+    } else {
+      // OAuth flow
+      if (!config.clientId || !config.clientSecret || !config.redirectUri) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          'Missing required OAuth parameters: clientId, clientSecret, redirectUri'
+        );
+      }
+      this.config = config;
     }
-    this.config = config;
   }
 
   public getClient(): LinearClient {
@@ -166,7 +205,7 @@ export class LinearAuth {
   }
 
   public needsTokenRefresh(): boolean {
-    if (!this.tokenData) return false;
+    if (!this.tokenData || !this.config || this.config.type === 'pat') return false;
     return Date.now() >= this.tokenData.expiresAt - 300000; // Refresh 5 minutes before expiry
   }
 

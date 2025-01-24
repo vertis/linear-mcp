@@ -1,15 +1,19 @@
 import { gql } from 'graphql-tag';
 
 export const CREATE_ISSUES_MUTATION = gql`
-  mutation CreateIssues($issues: [IssueCreateInput!]!) {
-    issueCreate(input: $issues) {
+  mutation CreateIssues($input: IssueCreateInput!) {
+    issueCreate(input: $input) {
       success
-      issues {
+      issue {
         id
         identifier
         title
         url
         team {
+          id
+          name
+        }
+        project {
           id
           name
         }
@@ -33,7 +37,7 @@ export const CREATE_PROJECT_WITH_ISSUES = gql`
     }
     issueCreate(input: $issues) {
       success
-      issues {
+      issue {
         id
         identifier
         title
@@ -44,10 +48,11 @@ export const CREATE_PROJECT_WITH_ISSUES = gql`
 `;
 
 export const UPDATE_ISSUES_MUTATION = gql`
-  mutation UpdateIssues($ids: [String!]!, $input: IssueUpdateInput!) {
-    issueUpdate(id: $ids, input: $input) {
+  # This is singular
+  mutation UpdateIssue($id: String!, $input: IssueUpdateInput!) {
+    issueUpdate(id: $id, input: $input) {
       success
-      issues {
+      issue {
         id
         identifier
         title
@@ -56,6 +61,14 @@ export const UPDATE_ISSUES_MUTATION = gql`
           name
         }
       }
+    }
+  }
+`;
+
+export const DELETE_ISSUE_MUTATION = gql`
+  mutation DeleteIssue($id: String!) {
+    issueDelete(id: $id) {
+      success
     }
   }
 `;

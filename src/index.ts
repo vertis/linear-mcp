@@ -30,6 +30,17 @@ class LinearServer {
     );
 
     this.auth = new LinearAuth();
+    
+    // Initialize with PAT if available
+    const accessToken = process.env.LINEAR_ACCESS_TOKEN;
+    if (accessToken) {
+      this.auth.initialize({
+        type: 'pat',
+        accessToken
+      });
+      this.graphqlClient = new LinearGraphQLClient(this.auth.getClient());
+    }
+    
     this.setupToolHandlers();
     
     // Error handling
@@ -286,6 +297,51 @@ class LinearServer {
             properties: {},
           },
         },
+        {
+          name: 'linear_delete_issue',
+          description: 'Delete an issue',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'Issue identifier (e.g., ENG-123)',
+              },
+            },
+            required: ['id'],
+          },
+        },
+        {
+          name: 'linear_delete_issues',
+          description: 'Delete multiple issues',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              ids: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description: 'List of issue identifiers to delete',
+              },
+            },
+            required: ['ids'],
+          },
+        },
+        {
+          name: 'linear_get_project',
+          description: 'Get project information',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'Project identifier',
+              },
+            },
+            required: ['id'],
+          },
+        },
       ],
     }));
 
@@ -308,6 +364,12 @@ class LinearServer {
           return this.handleGetTeams(request.params.arguments);
         case 'linear_get_user':
           return this.handleGetUser(request.params.arguments);
+        case 'linear_delete_issue':
+          return this.handleDeleteIssue(request.params.arguments);
+        case 'linear_delete_issues':
+          return this.handleDeleteIssues(request.params.arguments);
+        case 'linear_get_project':
+          return this.handleGetProject(request.params.arguments);
         default:
           throw new McpError(
             ErrorCode.MethodNotFound,
@@ -327,6 +389,7 @@ class LinearServer {
 
     try {
       this.auth.initialize({
+        type: 'oauth',
         clientId: args.clientId,
         clientSecret: args.clientSecret,
         redirectUri: args.redirectUri,
@@ -399,19 +462,20 @@ class LinearServer {
     }
 
     try {
-      const result = await this.graphqlClient.createIssues([{
+      const result = await this.graphqlClient.createIssue({
         title: args.title,
         description: args.description,
         teamId: args.teamId,
         assigneeId: args.assigneeId,
         priority: args.priority,
-      }]);
+        projectId: args.projectId
+      });
 
-      if (!result.issueCreate.success || !result.issueCreate.issues.length) {
+      if (!result.issueCreate.success || !result.issueCreate.issue) {
         throw new Error('Failed to create issue');
       }
 
-      const issue = result.issueCreate.issues[0];
+      const issue = result.issueCreate.issue;
 
       return {
         content: [
@@ -420,7 +484,8 @@ class LinearServer {
             text: `Successfully created issue\n` +
                   `Issue: ${issue.identifier}\n` +
                   `Title: ${issue.title}\n` +
-                  `URL: ${issue.url}`,
+                  `URL: ${issue.url}\n` +
+                  `Project: ${issue.project ? issue.project.name : 'None'}`,
           },
         ],
       };
@@ -642,6 +707,128 @@ class LinearServer {
       throw new McpError(
         ErrorCode.InternalError,
         `Failed to get user info: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private async handleGetProject(args: any): Promise<any> {
+    if (!this.auth.isAuthenticated() || !this.graphqlClient) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'Not authenticated. Call linear_auth first.'
+      );
+    }
+
+    if (this.auth.needsTokenRefresh()) {
+      await this.auth.refreshAccessToken();
+    }
+
+    if (!args.id) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'Missing required parameter: id'
+      );
+    }
+
+    try {
+      const result = await this.graphqlClient.getProject(args.id);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to get project info: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private async handleDeleteIssues(args: any): Promise<any> {
+    if (!this.auth.isAuthenticated() || !this.graphqlClient) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'Not authenticated. Call linear_auth first.'
+      );
+    }
+
+    if (this.auth.needsTokenRefresh()) {
+      await this.auth.refreshAccessToken();
+    }
+
+    if (!args.ids || !Array.isArray(args.ids)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'Missing required parameter: ids'
+      );
+    }
+
+    try {
+      const result = await this.graphqlClient.deleteIssues(args.ids);
+
+      if (!result.issueDelete.success) {
+        throw new Error('Failed to delete issues');
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Successfully deleted ${args.ids.length} issues: ${args.ids.join(', ')}`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to delete issues: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private async handleDeleteIssue(args: any): Promise<any> {
+    if (!this.auth.isAuthenticated() || !this.graphqlClient) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'Not authenticated. Call linear_auth first.'
+      );
+    }
+
+    if (this.auth.needsTokenRefresh()) {
+      await this.auth.refreshAccessToken();
+    }
+
+    if (!args.id) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'Missing required parameter: id'
+      );
+    }
+
+    try {
+      const result = await this.graphqlClient.deleteIssue(args.id);
+
+      if (!result.issueDelete.success) {
+        throw new Error('Failed to delete issue');
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Successfully deleted issue ${args.id}`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to delete issue: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
