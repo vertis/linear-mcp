@@ -116,6 +116,9 @@ export class IssueHandler extends BaseHandler {
       if (args.query) {
         filter.search = args.query;
       }
+      if (args.filter?.project?.id?.eq) {
+        filter.project = { id: { eq: args.filter.project.id.eq } };
+      }
       if (args.teamIds) {
         filter.team = { id: { in: args.teamIds } };
       }
