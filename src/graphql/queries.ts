@@ -38,7 +38,11 @@ export const SEARCH_ISSUES_QUERY = gql`
           id
           name
           key
-        }
+        },
+        project {
+          id
+          name
+        },
         priority
         labels {
           nodes {

@@ -1,0 +1,190 @@
+import { BaseHandler } from '../../../core/handlers/base.handler.js';
+import { BaseToolResponse } from '../../../core/interfaces/tool-handler.interface.js';
+import { LinearAuth } from '../../../auth.js';
+import { LinearGraphQLClient } from '../../../graphql/client.js';
+
+/**
+ * Handler for issue-related operations.
+ * Manages creating, updating, searching, and deleting issues.
+ */
+export class IssueHandler extends BaseHandler {
+  constructor(auth: LinearAuth, graphqlClient?: LinearGraphQLClient) {
+    super(auth, graphqlClient);
+  }
+
+  /**
+   * Creates a single issue.
+   */
+  async handleCreateIssue(args: any): Promise<BaseToolResponse> {
+    try {
+      const client = this.verifyAuth();
+      this.validateRequiredParams(args, ['title', 'description', 'teamId']);
+
+      const result = await client.createIssue({
+        title: args.title,
+        description: args.description,
+        teamId: args.teamId,
+        assigneeId: args.assigneeId,
+        priority: args.priority,
+        projectId: args.projectId
+      });
+
+      if (!result.issueCreate.success || !result.issueCreate.issue) {
+        throw new Error('Failed to create issue');
+      }
+
+      const issue = result.issueCreate.issue;
+
+      return this.createResponse(
+        `Successfully created issue\n` +
+        `Issue: ${issue.identifier}\n` +
+        `Title: ${issue.title}\n` +
+        `URL: ${issue.url}\n` +
+        `Project: ${issue.project ? issue.project.name : 'None'}`
+      );
+    } catch (error) {
+      this.handleError(error, 'create issue');
+    }
+  }
+
+  /**
+   * Creates multiple issues in bulk.
+   */
+  async handleCreateIssues(args: any): Promise<BaseToolResponse> {
+    try {
+      const client = this.verifyAuth();
+      this.validateRequiredParams(args, ['issues']);
+
+      if (!Array.isArray(args.issues)) {
+        throw new Error('Issues parameter must be an array');
+      }
+
+      const result = await client.createIssues(args.issues);
+
+      if (!result.issueCreate.success) {
+        throw new Error('Failed to create issues');
+      }
+
+      const createdIssues = result.issueCreate.issues;
+
+      return this.createResponse(
+        `Successfully created ${createdIssues.length} issues:\n` +
+        createdIssues.map(issue => 
+          `- ${issue.identifier}: ${issue.title}\n  URL: ${issue.url}`
+        ).join('\n')
+      );
+    } catch (error) {
+      this.handleError(error, 'create issues');
+    }
+  }
+
+  /**
+   * Updates multiple issues in bulk.
+   */
+  async handleBulkUpdateIssues(args: any): Promise<BaseToolResponse> {
+    try {
+      const client = this.verifyAuth();
+      this.validateRequiredParams(args, ['issueIds', 'update']);
+
+      if (!Array.isArray(args.issueIds)) {
+        throw new Error('IssueIds parameter must be an array');
+      }
+
+      const result = await client.updateIssues(args.issueIds, args.update);
+
+      if (!result.issueUpdate.success) {
+        throw new Error('Failed to update issues');
+      }
+
+      const updatedCount = result.issueUpdate.issues.length;
+
+      return this.createResponse(`Successfully updated ${updatedCount} issues`);
+    } catch (error) {
+      this.handleError(error, 'update issues');
+    }
+  }
+
+  /**
+   * Searches for issues with filtering and pagination.
+   */
+  async handleSearchIssues(args: any): Promise<BaseToolResponse> {
+    try {
+      const client = this.verifyAuth();
+
+      const filter: Record<string, any> = {};
+      
+      if (args.query) {
+        filter.search = args.query;
+      }
+      if (args.teamIds) {
+        filter.team = { id: { in: args.teamIds } };
+      }
+      if (args.assigneeIds) {
+        filter.assignee = { id: { in: args.assigneeIds } };
+      }
+      if (args.states) {
+        filter.state = { name: { in: args.states } };
+      }
+      if (typeof args.priority === 'number') {
+        filter.priority = { eq: args.priority };
+      }
+
+      const result = await client.searchIssues(
+        filter,
+        args.first || 50,
+        args.after,
+        args.orderBy || 'updatedAt'
+      );
+
+      return this.createJsonResponse(result);
+    } catch (error) {
+      this.handleError(error, 'search issues');
+    }
+  }
+
+  /**
+   * Deletes a single issue.
+   */
+  async handleDeleteIssue(args: any): Promise<BaseToolResponse> {
+    try {
+      const client = this.verifyAuth();
+      this.validateRequiredParams(args, ['id']);
+
+      const result = await client.deleteIssue(args.id);
+
+      if (!result.issueDelete.success) {
+        throw new Error('Failed to delete issue');
+      }
+
+      return this.createResponse(`Successfully deleted issue ${args.id}`);
+    } catch (error) {
+      this.handleError(error, 'delete issue');
+    }
+  }
+
+  /**
+   * Deletes multiple issues in bulk.
+   */
+  async handleDeleteIssues(args: any): Promise<BaseToolResponse> {
+    try {
+      const client = this.verifyAuth();
+      this.validateRequiredParams(args, ['ids']);
+
+      if (!Array.isArray(args.ids)) {
+        throw new Error('Ids parameter must be an array');
+      }
+
+      const result = await client.deleteIssues(args.ids);
+
+      if (!result.issueDelete.success) {
+        throw new Error('Failed to delete issues');
+      }
+
+      return this.createResponse(
+        `Successfully deleted ${args.ids.length} issues: ${args.ids.join(', ')}`
+      );
+    } catch (error) {
+      this.handleError(error, 'delete issues');
+    }
+  }
+}
