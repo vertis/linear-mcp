@@ -65,10 +65,13 @@ export abstract class BaseHandler {
 
   /**
    * Validates that required parameters are present.
+   * @param params The parameters object to validate
+   * @param required Array of required parameter names
+   * @throws {McpError} If any required parameters are missing
    */
-  protected validateRequiredParams(
-    params: Record<string, unknown>,
-    required: string[]
+  protected validateRequiredParams<T>(
+    params: T,
+    required: Array<keyof T & string>
   ): void {
     const missing = required.filter(param => !params[param]);
     if (missing.length > 0) {

@@ -168,27 +168,104 @@ interface ErrorToolResponse extends BaseToolResponse {
    - Use integration tests for full flows
    - Mock GraphQL responses
 
-## Future Improvements
+## Planned Improvements
 
-1. **Type Safety**
-   - Add proper types for handler arguments
-   - Remove remaining 'any' types
-   - Generate types from GraphQL schema
+### Type Safety & Validation
+- Replace all 'any' types with proper interfaces
+- Generate types from GraphQL schema
+- Add runtime type checking
+- Implement JSON schema validation for inputs
+- Improve error messages for validation failures
 
-2. **Handler Enhancements**
-   - Add input validation
-   - Implement response caching
-   - Add retry logic
+### Performance Optimizations
+- Implement true batch mutations for bulk operations
+- Pre-import and cache GraphQL operations
+- Add query batching for related operations
+- Implement proper error handling for GraphQL errors
+- Move to GraphQL code generation
+- Add operation validation
 
-3. **OAuth Implementation**
-   - Complete OAuth flow
-   - Add token refresh
-   - Implement proper state management
+### Handler Enhancements
+- Add comprehensive input validation
+- Implement response caching with invalidation
+- Add retry logic with backoff strategy
+- Add handler lifecycle hooks
+- Improve error context and debugging
 
-4. **GraphQL Operations**
-   - Move to code generation
-   - Add operation validation
-   - Implement batching
+### OAuth Implementation
+- Complete OAuth flow with proper state management
+- Add token refresh with automatic retry
+- Implement secure token storage
+- Add proper error handling for OAuth flows
+- Support multiple OAuth scopes
+
+### GraphQL Operations
+- Implement true batching for bulk operations
+- Move to code generation for type safety
+- Add operation validation and optimization
+- Implement proper error handling
+- Add query complexity analysis
+
+### Authentication Refactoring
+- Split authentication into separate implementations:
+  ```typescript
+  interface ILinearAuth {
+    initialize(config: AuthConfig): void;
+    isAuthenticated(): boolean;
+    getClient(): LinearClient;
+  }
+
+  class OAuthLinearAuth implements ILinearAuth {
+    // OAuth-specific implementation
+  }
+
+  class PatLinearAuth implements ILinearAuth {
+    // PAT-specific implementation
+  }
+  ```
+
+### Caching Layer
+- Implement caching for frequently accessed data:
+  ```typescript
+  interface CacheConfig {
+    ttl: number;
+    maxSize: number;
+  }
+
+  class CacheManager {
+    private cache: Map<string, CacheEntry>;
+    
+    get<T>(key: string): T | undefined;
+    set<T>(key: string, value: T, ttl?: number): void;
+    invalidate(pattern: string): void;
+  }
+  ```
+
+### Rate Limiting
+- Add rate limiting middleware:
+  ```typescript
+  class RateLimiter {
+    private readonly limits: Map<string, number>;
+    private readonly windowMs: number;
+
+    async checkLimit(operation: string): Promise<boolean>;
+    async waitForAvailability(operation: string): Promise<void>;
+  }
+  ```
+
+### Error Handling
+- Implement domain-specific error types:
+  ```typescript
+  class LinearApiError extends Error {
+    constructor(
+      public code: string,
+      public operation: string,
+      message: string
+    ) {
+      super(message);
+    }
+  }
+  ```
 
 ## Contributing
 

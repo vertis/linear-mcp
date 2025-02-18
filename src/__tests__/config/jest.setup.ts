@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import type { LinearClient } from '@linear/sdk';
-import type { LinearGraphQLClient } from '../graphql/client';
+import type { LinearGraphQLClient } from '../../graphql/client';
 import { config } from 'dotenv';
 
 // Load environment variables from .env file
@@ -37,17 +37,23 @@ type MockedLinearClient = {
   client: MockedGraphQLClient;
 };
 
-// Create mock client instance
-const mockLinearClient = {
+// Create mock client factory function
+const createMockClient = () => ({
   client: {
     rawRequest: jest.fn().mockImplementation(async () => ({ data: {} }))
-  }
-} as MockedLinearClient;
+  },
+  viewer: Promise.resolve({ id: 'test-user', name: 'Test User' })
+});
+
+// Create mock constructor that creates new instances
+const MockLinearClient = jest.fn(function(this: any) {
+  return Object.assign(this, createMockClient());
+});
 
 // Mock the Linear SDK
 jest.mock('@linear/sdk', () => ({
-  LinearClient: jest.fn(() => mockLinearClient)
+  LinearClient: MockLinearClient
 }));
 
 // Export mock for use in tests
-export const getMockLinearClient = () => mockLinearClient;
+export const getMockLinearClient = () => new (MockLinearClient as any)();

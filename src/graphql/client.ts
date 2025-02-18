@@ -1,5 +1,29 @@
 import { LinearClient } from '@linear/sdk';
 import { DocumentNode } from 'graphql';
+import { 
+  CreateIssueInput, 
+  CreateIssueResponse,
+  CreateIssuesResponse,
+  UpdateIssueInput,
+  UpdateIssuesResponse,
+  SearchIssuesInput,
+  SearchIssuesResponse,
+  DeleteIssueResponse,
+  Issue
+} from '../features/issues/types/issue.types.js';
+import {
+  ProjectInput,
+  ProjectResponse,
+  SearchProjectsResponse
+} from '../features/projects/types/project.types.js';
+import {
+  TeamResponse,
+  LabelInput,
+  LabelResponse
+} from '../features/teams/types/team.types.js';
+import {
+  UserResponse
+} from '../features/users/types/user.types.js';
 
 export class LinearGraphQLClient {
   private linearClient: LinearClient;
@@ -8,7 +32,7 @@ export class LinearGraphQLClient {
     this.linearClient = linearClient;
   }
 
-  async execute<T = any, V extends Record<string, unknown> = Record<string, unknown>>(
+  async execute<T, V extends Record<string, unknown> = Record<string, unknown>>(
     document: DocumentNode,
     variables?: V
   ): Promise<T> {
@@ -28,65 +52,56 @@ export class LinearGraphQLClient {
   }
 
   // Create single issue
-  async createIssue(input: any) {
+  async createIssue(input: CreateIssueInput): Promise<CreateIssueResponse> {
     const { CREATE_ISSUES_MUTATION } = await import('./mutations.js');
-    return this.execute(CREATE_ISSUES_MUTATION, { input });
+    return this.execute<CreateIssueResponse>(CREATE_ISSUES_MUTATION, { input: [input] });
   }
 
   // Create multiple issues
-  async createIssues(issues: any[]) {
-    // For multiple issues, we'll need to make multiple requests
-    const results = await Promise.all(issues.map(issue => this.createIssue(issue)));
-    return {
-      issueCreate: {
-        success: results.every(r => r.issueCreate.success),
-        issues: results.map(r => r.issueCreate.issue)
-      }
-    };
+  async createIssues(issues: CreateIssueInput[]): Promise<CreateIssuesResponse> {
+    const { CREATE_ISSUES_MUTATION } = await import('./mutations.js');
+    return this.execute<CreateIssuesResponse>(CREATE_ISSUES_MUTATION, { input: issues });
   }
 
   // Create project with associated issues
-  async createProjectWithIssues(projectInput: any, issues: any[]) {
+  async createProjectWithIssues(projectInput: ProjectInput, issues: CreateIssueInput[]): Promise<ProjectResponse> {
     const { CREATE_PROJECT_WITH_ISSUES } = await import('./mutations.js');
-    return this.execute(CREATE_PROJECT_WITH_ISSUES, {
+    return this.execute<ProjectResponse>(CREATE_PROJECT_WITH_ISSUES, {
       projectInput,
       issues,
     });
   }
 
   // Update a single issue
-  async updateIssue(id: string, input: any) {
+  async updateIssue(id: string, input: UpdateIssueInput): Promise<UpdateIssuesResponse> {
     const { UPDATE_ISSUES_MUTATION } = await import('./mutations.js');
-    return this.execute(UPDATE_ISSUES_MUTATION, {
-      id,
+    return this.execute<UpdateIssuesResponse>(UPDATE_ISSUES_MUTATION, {
+      ids: [id],
       input,
     });
   }
 
   // Bulk update issues
-  // We don't want to take this approach in the future
-  // TODO: turn this into a single graphQL call
-  async updateIssues(ids: string[], input: any) {
-    // For multiple issues, we'll need to make multiple requests
-    const results = await Promise.all(ids.map(id => this.updateIssue(id, input)));
-    return {
-      issueUpdate: {
-        success: results.every(r => r.issueUpdate.success),
-        issues: results.map(r => r.issueUpdate.issue)
-      }
-    };
+  async updateIssues(ids: string[], input: UpdateIssueInput): Promise<UpdateIssuesResponse> {
+    const { UPDATE_ISSUES_MUTATION } = await import('./mutations.js');
+    return this.execute<UpdateIssuesResponse>(UPDATE_ISSUES_MUTATION, { ids, input });
   }
 
   // Create multiple labels
-  async createIssueLabels(labels: any[]) {
+  async createIssueLabels(labels: LabelInput[]): Promise<LabelResponse> {
     const { CREATE_ISSUE_LABELS } = await import('./mutations.js');
-    return this.execute(CREATE_ISSUE_LABELS, { labels });
+    return this.execute<LabelResponse>(CREATE_ISSUE_LABELS, { labels });
   }
 
   // Search issues with pagination
-  async searchIssues(filter: any, first: number = 50, after?: string, orderBy: string = "updatedAt") {
+  async searchIssues(
+    filter: SearchIssuesInput['filter'], 
+    first: number = 50, 
+    after?: string, 
+    orderBy: string = "updatedAt"
+  ): Promise<SearchIssuesResponse> {
     const { SEARCH_ISSUES_QUERY } = await import('./queries.js');
-    return this.execute(SEARCH_ISSUES_QUERY, {
+    return this.execute<SearchIssuesResponse>(SEARCH_ISSUES_QUERY, {
       filter,
       first,
       after,
@@ -95,43 +110,38 @@ export class LinearGraphQLClient {
   }
 
   // Get teams with their states and labels
-  async getTeams() {
+  async getTeams(): Promise<TeamResponse> {
     const { GET_TEAMS_QUERY } = await import('./queries.js');
-    return this.execute(GET_TEAMS_QUERY);
+    return this.execute<TeamResponse>(GET_TEAMS_QUERY);
   }
 
   // Get current user info
-  async getCurrentUser() {
+  async getCurrentUser(): Promise<UserResponse> {
     const { GET_USER_QUERY } = await import('./queries.js');
-    return this.execute(GET_USER_QUERY);
+    return this.execute<UserResponse>(GET_USER_QUERY);
   }
 
   // Get project info
-  async getProject(id: string) {
+  async getProject(id: string): Promise<ProjectResponse> {
     const { GET_PROJECT_QUERY } = await import('./queries.js');
-    return this.execute(GET_PROJECT_QUERY, { id });
+    return this.execute<ProjectResponse>(GET_PROJECT_QUERY, { id });
   }
 
   // Search projects
-  async searchProjects(filter: { name?: { eq: string } }) {
+  async searchProjects(filter: { name?: { eq: string } }): Promise<SearchProjectsResponse> {
     const { SEARCH_PROJECTS_QUERY } = await import('./queries.js');
-    return this.execute(SEARCH_PROJECTS_QUERY, { filter });
+    return this.execute<SearchProjectsResponse>(SEARCH_PROJECTS_QUERY, { filter });
   }
 
-  // Delete an issue
-  async deleteIssue(id: string) {
-    const { DELETE_ISSUE_MUTATION } = await import('./mutations.js');
-    return this.execute(DELETE_ISSUE_MUTATION, { id });
+  // Delete a single issue
+  async deleteIssue(id: string): Promise<DeleteIssueResponse> {
+    const { DELETE_ISSUES_MUTATION } = await import('./mutations.js');
+    return this.execute<DeleteIssueResponse>(DELETE_ISSUES_MUTATION, { ids: [id] });
   }
 
   // Delete multiple issues
-  async deleteIssues(ids: string[]) {
-    // Make parallel requests for each issue
-    const results = await Promise.all(ids.map(id => this.deleteIssue(id)));
-    return {
-      issueDelete: {
-        success: results.every(r => r.issueDelete.success)
-      }
-    };
+  async deleteIssues(ids: string[]): Promise<DeleteIssueResponse> {
+    const { DELETE_ISSUES_MUTATION } = await import('./mutations.js');
+    return this.execute<DeleteIssueResponse>(DELETE_ISSUES_MUTATION, { ids });
   }
 }
