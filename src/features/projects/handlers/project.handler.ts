@@ -15,14 +15,60 @@ export class ProjectHandler extends BaseHandler {
   /**
    * Creates a new project with associated issues.
    */
+  /**
+   * Creates a new project with associated issues
+   * @example
+   * ```typescript
+   * const result = await handler.handleCreateProjectWithIssues({
+   *   project: {
+   *     name: "Q1 Planning",
+   *     description: "Q1 2025 Planning Project",
+   *     teamIds: ["team-id-1"], // Required: Array of team IDs
+   *   },
+   *   issues: [{
+   *     title: "Project Setup",
+   *     description: "Initial project setup tasks",
+   *     teamId: "team-id-1"
+   *   }]
+   * });
+   * ```
+   */
   async handleCreateProjectWithIssues(args: any): Promise<BaseToolResponse> {
     try {
       const client = this.verifyAuth();
       this.validateRequiredParams(args, ['project', 'issues']);
 
-      if (!Array.isArray(args.issues)) {
-        throw new Error('Issues parameter must be an array');
+      // Validate project input
+      if (!args.project.teamIds || !Array.isArray(args.project.teamIds) || args.project.teamIds.length === 0) {
+        throw new Error(
+          'Project requires teamIds as an array with at least one team ID.\n' +
+          'Example:\n' +
+          '{\n' +
+          '  project: {\n' +
+          '    name: "Project Name",\n' +
+          '    teamIds: ["team-id-1"]\n' +
+          '  },\n' +
+          '  issues: [{ title: "Issue Title", teamId: "team-id-1" }]\n' +
+          '}'
+        );
       }
+
+      if (!Array.isArray(args.issues)) {
+        throw new Error(
+          'Issues parameter must be an array of issue objects.\n' +
+          'Example: issues: [{ title: "Issue Title", teamId: "team-id-1" }]'
+        );
+      }
+
+      // Validate each issue has required teamId
+      args.issues.forEach((issue: any, index: number) => {
+        if (!issue.teamId) {
+          throw new Error(
+            `Issue at index ${index} is missing required teamId.\n` +
+            'Each issue must have a teamId that matches one of the project teamIds.'
+          );
+        }
+      });
 
       const result = await client.createProjectWithIssues(
         args.project,

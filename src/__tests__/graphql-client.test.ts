@@ -188,7 +188,7 @@ describe('LinearGraphQLClient', () => {
 
         const projectInput: ProjectInput = {
           name: 'New Project',
-          teamId: 'team-1'
+          teamIds: ['team-1']
         };
 
         const result = await graphqlClient.createProject(projectInput);
@@ -239,7 +239,7 @@ describe('LinearGraphQLClient', () => {
 
         const projectInput: ProjectInput = {
           name: 'New Project',
-          teamId: 'team-1'
+          teamIds: ['team-1']
         };
 
         const issueInput: CreateIssueInput = {
@@ -290,7 +290,7 @@ describe('LinearGraphQLClient', () => {
 
         const projectInput: ProjectInput = {
           name: 'New Project',
-          teamId: 'team-1'
+          teamIds: ['team-1']
         };
 
         const issueInput: CreateIssueInput = {
@@ -335,7 +335,7 @@ describe('LinearGraphQLClient', () => {
 
         const projectInput: ProjectInput = {
           name: 'New Project',
-          teamId: 'team-1'
+          teamIds: ['team-1']
         };
 
         const issueInput: CreateIssueInput = {

@@ -87,7 +87,7 @@ export const toolSchemas = {
 
   linear_create_project_with_issues: {
     name: 'linear_create_project_with_issues',
-    description: 'Create a new project with associated issues',
+    description: 'Create a new project with associated issues. Note: Project requires teamIds (array) not teamId (single value).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -100,14 +100,15 @@ export const toolSchemas = {
             },
             description: {
               type: 'string',
-              description: 'Project description',
+              description: 'Project description (optional)',
             },
             teamIds: {
               type: 'array',
               items: {
                 type: 'string',
               },
-              description: 'Team IDs',
+              description: 'Array of team IDs this project belongs to (Required). Use linear_get_teams to get available team IDs.',
+              minItems: 1
             },
           },
           required: ['name', 'teamIds'],
@@ -127,16 +128,57 @@ export const toolSchemas = {
               },
               teamId: {
                 type: 'string',
-                description: 'Team ID',
+                description: 'Team ID (must match one of the project teamIds)',
               },
             },
             required: ['title', 'description', 'teamId'],
           },
-          description: 'List of issues to create',
+          description: 'List of issues to create with this project',
         },
       },
       required: ['project', 'issues'],
     },
+    examples: [
+      {
+        description: "Create a project with a single team and issue",
+        value: {
+          project: {
+            name: "Q1 Planning",
+            description: "Q1 2025 Planning Project",
+            teamIds: ["team-id-1"]
+          },
+          issues: [
+            {
+              title: "Project Setup",
+              description: "Initial project setup tasks",
+              teamId: "team-id-1"
+            }
+          ]
+        }
+      },
+      {
+        description: "Create a project with multiple teams",
+        value: {
+          project: {
+            name: "Cross-team Initiative",
+            description: "Project spanning multiple teams",
+            teamIds: ["team-id-1", "team-id-2"]
+          },
+          issues: [
+            {
+              title: "Team 1 Tasks",
+              description: "Tasks for team 1",
+              teamId: "team-id-1"
+            },
+            {
+              title: "Team 2 Tasks",
+              description: "Tasks for team 2",
+              teamId: "team-id-2"
+            }
+          ]
+        }
+      }
+    ]
   },
 
   linear_bulk_update_issues: {
