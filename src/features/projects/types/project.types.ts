@@ -17,6 +17,17 @@ export interface ProjectResponse {
       name: string;
       url: string;
     };
+    lastSyncId: number;
+  };
+  issueBatchCreate?: {
+    success: boolean;
+    issues: Array<{
+      id: string;
+      identifier: string;
+      title: string;
+      url: string;
+    }>;
+    lastSyncId: number;
   };
 }
 

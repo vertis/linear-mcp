@@ -22,27 +22,31 @@ export const CREATE_ISSUES_MUTATION = gql`
   }
 `;
 
-export const CREATE_PROJECT_WITH_ISSUES = gql`
-  mutation CreateProjectWithIssues(
-    $projectInput: ProjectCreateInput!
-    $issues: [IssueCreateInput!]!
-  ) {
-    projectCreate(input: $projectInput) {
+export const CREATE_PROJECT = gql`
+  mutation CreateProject($input: ProjectCreateInput!) {
+    projectCreate(input: $input) {
       success
       project {
         id
         name
         url
       }
+      lastSyncId
     }
-    issueCreate(input: $issues) {
+  }
+`;
+
+export const CREATE_BATCH_ISSUES = gql`
+  mutation CreateBatchIssues($input: IssueBatchCreateInput!) {
+    issueBatchCreate(input: $input) {
       success
-      issue {
+      issues {
         id
         identifier
         title
         url
       }
+      lastSyncId
     }
   }
 `;

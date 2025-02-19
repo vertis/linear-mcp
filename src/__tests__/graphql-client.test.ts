@@ -168,8 +168,8 @@ describe('LinearGraphQLClient', () => {
   });
 
   describe('Project Operations', () => {
-    describe('createProjectWithIssues', () => {
-      it('should successfully create project with issues', async () => {
+    describe('createProject', () => {
+      it('should successfully create a project', async () => {
         const mockResponse = {
           data: {
             projectCreate: {
@@ -178,12 +178,64 @@ describe('LinearGraphQLClient', () => {
                 id: 'project-1',
                 name: 'New Project',
                 url: 'https://linear.app/test/project/1'
-              }
+              },
+              lastSyncId: 123
             }
           }
         };
 
         mockRawRequest.mockResolvedValueOnce(mockResponse);
+
+        const projectInput: ProjectInput = {
+          name: 'New Project',
+          teamId: 'team-1'
+        };
+
+        const result = await graphqlClient.createProject(projectInput);
+        expect(result).toEqual(mockResponse.data);
+        expect(mockRawRequest).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({ input: projectInput })
+        );
+      });
+    });
+
+    describe('createProjectWithIssues', () => {
+      it('should successfully create project with issues', async () => {
+        const projectMockResponse = {
+          data: {
+            projectCreate: {
+              success: true,
+              project: {
+                id: 'project-1',
+                name: 'New Project',
+                url: 'https://linear.app/test/project/1'
+              },
+              lastSyncId: 123
+            }
+          }
+        };
+
+        const issueMockResponse = {
+          data: {
+            issueBatchCreate: {
+              success: true,
+              issues: [
+                {
+                  id: 'issue-1',
+                  identifier: 'TEST-1',
+                  title: 'Project Issue 1',
+                  url: 'https://linear.app/test/issue/TEST-1'
+                }
+              ],
+              lastSyncId: 124
+            }
+          }
+        };
+
+        mockRawRequest
+          .mockResolvedValueOnce(projectMockResponse)
+          .mockResolvedValueOnce(issueMockResponse);
 
         const projectInput: ProjectInput = {
           name: 'New Project',
@@ -196,17 +248,45 @@ describe('LinearGraphQLClient', () => {
           teamId: 'team-1'
         };
 
-        const result: ProjectResponse = await graphqlClient.createProjectWithIssues(
+        const result = await graphqlClient.createProjectWithIssues(
           projectInput,
           [issueInput]
         );
 
-        expect(result).toEqual(mockResponse.data);
-        expect(mockRawRequest).toHaveBeenCalled();
+        expect(result).toEqual({
+          projectCreate: projectMockResponse.data.projectCreate,
+          issueBatchCreate: issueMockResponse.data.issueBatchCreate
+        });
+
+        // Verify project creation call
+        expect(mockRawRequest).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({ input: projectInput })
+        );
+
+        // Verify issue creation call
+        expect(mockRawRequest).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            input: {
+              issues: [{ ...issueInput, projectId: 'project-1' }]
+            }
+          })
+        );
       });
 
       it('should handle project creation errors', async () => {
-        mockRawRequest.mockRejectedValueOnce(new Error('Project creation failed'));
+        const errorResponse = {
+          data: {
+            projectCreate: {
+              success: false,
+              project: null,
+              lastSyncId: 123
+            }
+          }
+        };
+
+        mockRawRequest.mockResolvedValueOnce(errorResponse);
 
         const projectInput: ProjectInput = {
           name: 'New Project',
@@ -221,7 +301,52 @@ describe('LinearGraphQLClient', () => {
 
         await expect(
           graphqlClient.createProjectWithIssues(projectInput, [issueInput])
-        ).rejects.toThrow('GraphQL operation failed: Project creation failed');
+        ).rejects.toThrow('Failed to create project');
+      });
+
+      it('should handle issue creation errors', async () => {
+        const projectResponse = {
+          data: {
+            projectCreate: {
+              success: true,
+              project: {
+                id: 'project-1',
+                name: 'New Project',
+                url: 'https://linear.app/test/project/1'
+              },
+              lastSyncId: 123
+            }
+          }
+        };
+
+        const errorResponse = {
+          data: {
+            issueBatchCreate: {
+              success: false,
+              issues: [],
+              lastSyncId: 124
+            }
+          }
+        };
+
+        mockRawRequest
+          .mockResolvedValueOnce(projectResponse)
+          .mockResolvedValueOnce(errorResponse);
+
+        const projectInput: ProjectInput = {
+          name: 'New Project',
+          teamId: 'team-1'
+        };
+
+        const issueInput: CreateIssueInput = {
+          title: 'Project Issue 1',
+          description: 'Description 1',
+          teamId: 'team-1'
+        };
+
+        await expect(
+          graphqlClient.createProjectWithIssues(projectInput, [issueInput])
+        ).rejects.toThrow('Failed to create issues');
       });
     });
   });

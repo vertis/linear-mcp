@@ -9,7 +9,8 @@ import {
   SearchIssuesInput,
   SearchIssuesResponse,
   DeleteIssueResponse,
-  Issue
+  Issue,
+  IssueBatchResponse
 } from '../features/issues/types/issue.types.js';
 import {
   ProjectInput,
@@ -63,13 +64,45 @@ export class LinearGraphQLClient {
     return this.execute<CreateIssuesResponse>(CREATE_ISSUES_MUTATION, { input: issues });
   }
 
-  // Create project with associated issues
-  async createProjectWithIssues(projectInput: ProjectInput, issues: CreateIssueInput[]): Promise<ProjectResponse> {
-    const { CREATE_PROJECT_WITH_ISSUES } = await import('./mutations.js');
-    return this.execute<ProjectResponse>(CREATE_PROJECT_WITH_ISSUES, {
-      projectInput,
-      issues,
+  // Create a project
+  async createProject(input: ProjectInput): Promise<ProjectResponse> {
+    const { CREATE_PROJECT } = await import('./mutations.js');
+    return this.execute<ProjectResponse>(CREATE_PROJECT, { input });
+  }
+
+  // Create batch of issues
+  async createBatchIssues(issues: CreateIssueInput[]): Promise<IssueBatchResponse> {
+    const { CREATE_BATCH_ISSUES } = await import('./mutations.js');
+    return this.execute<IssueBatchResponse>(CREATE_BATCH_ISSUES, {
+      input: { issues }
     });
+  }
+
+  // Helper method to create a project with associated issues
+  async createProjectWithIssues(projectInput: ProjectInput, issues: CreateIssueInput[]): Promise<ProjectResponse> {
+    // Create project first
+    const projectResult = await this.createProject(projectInput);
+    
+    if (!projectResult.projectCreate.success) {
+      throw new Error('Failed to create project');
+    }
+
+    // Then create issues with project ID
+    const issuesWithProject = issues.map(issue => ({
+      ...issue,
+      projectId: projectResult.projectCreate.project.id
+    }));
+
+    const issuesResult = await this.createBatchIssues(issuesWithProject);
+
+    if (!issuesResult.issueBatchCreate.success) {
+      throw new Error('Failed to create issues');
+    }
+
+    return {
+      projectCreate: projectResult.projectCreate,
+      issueBatchCreate: issuesResult.issueBatchCreate
+    };
   }
 
   // Update a single issue

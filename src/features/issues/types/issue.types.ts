@@ -85,6 +85,14 @@ export interface CreateIssuesResponse {
   };
 }
 
+export interface IssueBatchResponse {
+  issueBatchCreate: {
+    success: boolean;
+    issues: Issue[];
+    lastSyncId: number;
+  };
+}
+
 export interface UpdateIssuesResponse {
   issueUpdate: {
     success: boolean;

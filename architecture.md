@@ -115,19 +115,39 @@ interface AuthConfig {
 
 ### GraphQL Layer
 
-The GraphQL layer provides domain-specific operations:
+The GraphQL layer provides domain-specific operations with atomic and composite patterns:
 
 ```typescript
 class LinearGraphQLClient {
   // Execute GraphQL operations
   async execute<T>(document: DocumentNode, variables?: any): Promise<T>;
   
-  // Domain-specific methods
-  async createIssue(input: any): Promise<IssueResult>;
-  async searchProjects(filter: any): Promise<ProjectResult>;
-  // ... other operations
+  // Atomic operations
+  async createProject(input: ProjectInput): Promise<ProjectResponse>;
+  async createBatchIssues(issues: CreateIssueInput[]): Promise<IssueBatchResponse>;
+  
+  // Composite operations (built from atomic operations)
+  async createProjectWithIssues(
+    projectInput: ProjectInput, 
+    issues: CreateIssueInput[]
+  ): Promise<ProjectResponse> {
+    // Creates project first, then creates issues with project reference
+    const project = await this.createProject(projectInput);
+    const issuesWithProject = issues.map(issue => ({
+      ...issue,
+      projectId: project.projectCreate.project.id
+    }));
+    const batchResult = await this.createBatchIssues(issuesWithProject);
+    return { projectCreate: project.projectCreate, issueBatchCreate: batchResult.issueBatchCreate };
+  }
 }
 ```
+
+This pattern ensures:
+- Clear separation between atomic and composite operations
+- Type safety through the entire operation chain
+- Proper error handling at each step
+- Reusable atomic operations
 
 ### Error Handling
 

@@ -29,19 +29,28 @@ export class ProjectHandler extends BaseHandler {
         args.issues
       );
 
-      if (!result.projectCreate.success) {
-        throw new Error('Failed to create project');
+      if (!result.projectCreate.success || (result.issueBatchCreate && !result.issueBatchCreate.success)) {
+        throw new Error('Failed to create project or issues');
       }
 
       const { project } = result.projectCreate;
-      const issuesCreated = result.issueCreate.issues.length;
+      const issuesCreated = result.issueBatchCreate?.issues.length ?? 0;
 
-      return this.createResponse(
-        `Successfully created project with issues\n` +
-        `Project: ${project.name}\n` +
-        `URL: ${project.url}\n` +
-        `Issues created: ${issuesCreated}`
-      );
+      const response = [
+        `Successfully created project with issues`,
+        `Project: ${project.name}`,
+        `Project URL: ${project.url}`
+      ];
+
+      if (issuesCreated > 0) {
+        response.push(`Issues created: ${issuesCreated}`);
+        // Add details for each issue
+        result.issueBatchCreate?.issues.forEach(issue => {
+          response.push(`- ${issue.identifier}: ${issue.title} (${issue.url})`);
+        });
+      }
+
+      return this.createResponse(response.join('\n'));
     } catch (error) {
       this.handleError(error, 'create project with issues');
     }
