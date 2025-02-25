@@ -11,7 +11,6 @@ export interface CreateIssueInput {
   assigneeId?: string;
   priority?: number;
   projectId?: string;
-  stateType?: string;
 }
 
 export interface CreateIssuesInput {
