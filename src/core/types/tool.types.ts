@@ -70,6 +70,16 @@ export const toolSchemas = {
           description: 'Issue priority (0-4)',
           optional: true,
         },
+        projectId: {
+          type: 'string',
+          description: 'Project ID',
+          optional: true,
+        },
+        stateType: {
+          type: 'string',
+          description: 'Issue state type("triage", "backlog", "unstarted", "started", "completed", "canceled")',
+          optional: true,
+        },
         createAsUser: {
           type: 'string',
           description: 'Name to display for the created issue',
@@ -382,9 +392,24 @@ export const toolSchemas = {
                 type: 'string',
                 description: 'Team ID',
               },
+              assigneeId: {
+                type: 'string',
+                description: 'Assignee user ID',
+                optional: true,
+              },
+              priority: {
+                type: 'number',
+                description: 'Issue priority (0-4)',
+                optional: true,
+              },
               projectId: {
                 type: 'string',
                 description: 'Project ID',
+                optional: true,
+              },
+              stateType: {
+                type: 'string',
+                description: 'Issue state type("triage", "backlog", "unstarted", "started", "completed", "canceled")',
                 optional: true,
               },
               labelIds: {
