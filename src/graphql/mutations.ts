@@ -1,6 +1,6 @@
 import { gql } from 'graphql-tag';
 
-export const CREATE_ISSUES_MUTATION = gql`
+export const CREATE_ISSUE_MUTATION = gql`
   mutation CreateIssues($input: IssueCreateInput!) {
     issueCreate(input: $input) {
       success

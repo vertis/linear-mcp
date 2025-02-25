@@ -2,6 +2,7 @@ import { LinearClient } from '@linear/sdk';
 import { DocumentNode } from 'graphql';
 import { 
   CreateIssueInput, 
+  CreateIssuesInput,
   CreateIssueResponse,
   CreateIssuesResponse,
   UpdateIssueInput,
@@ -54,8 +55,8 @@ export class LinearGraphQLClient {
 
   // Create single issue
   async createIssue(input: CreateIssueInput): Promise<CreateIssueResponse> {
-    const { CREATE_ISSUES_MUTATION } = await import('./mutations.js');
-    return this.execute<CreateIssueResponse>(CREATE_ISSUES_MUTATION, { input: input });
+    const { CREATE_ISSUE_MUTATION } = await import('./mutations.js');
+    return this.execute<CreateIssueResponse>(CREATE_ISSUE_MUTATION, { input: input });
   }
 
   // Create multiple issues
