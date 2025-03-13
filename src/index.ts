@@ -38,7 +38,7 @@ class LinearServer {
     this.auth = new LinearAuth();
     
     // Initialize with PAT if available
-    const accessToken = process.env.LINEAR_ACCESS_TOKEN;
+    const accessToken = process.env.LINEAR_PAT || process.env.LINEAR_ACCESS_TOKEN; // Support both new and legacy env var
     if (accessToken) {
       this.auth.initialize({
         type: 'pat',

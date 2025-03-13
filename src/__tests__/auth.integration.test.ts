@@ -3,7 +3,7 @@ import { LinearAuth } from '../auth';
 import { LinearClient } from '@linear/sdk';
 
 // Skip tests if no credentials are configured
-const hasPatCredentials = process.env.LINEAR_ACCESS_TOKEN;
+const hasPatCredentials = process.env.LINEAR_PAT || process.env.LINEAR_ACCESS_TOKEN; // Support both env vars
 const hasOAuthCredentials = process.env.LINEAR_CLIENT_ID && 
                           process.env.LINEAR_CLIENT_SECRET && 
                           process.env.LINEAR_REDIRECT_URI;
@@ -19,7 +19,7 @@ const hasOAuthCredentials = process.env.LINEAR_CLIENT_ID &&
       auth = new LinearAuth();
       auth.initialize({
         type: 'pat',
-        accessToken: process.env.LINEAR_ACCESS_TOKEN!
+        accessToken: process.env.LINEAR_PAT || process.env.LINEAR_ACCESS_TOKEN!
       });
     });
 

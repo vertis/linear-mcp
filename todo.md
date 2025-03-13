@@ -34,12 +34,12 @@
 ## Medium Priority
 
 ### Authentication Refactoring
-- [ ] Split LinearAuth into separate classes:
-  - [ ] Create ILinearAuth interface
-  - [ ] Implement OAuthLinearAuth class
-  - [ ] Implement PatLinearAuth class
-- [ ] Move OAuth-specific logic to OAuthLinearAuth
-- [ ] Simplify PatLinearAuth implementation
+- [x] Split LinearAuth into separate classes:
+  - [x] Create ILinearAuth interface
+  - [x] Implement OAuthLinearAuth class
+  - [x] Implement PatLinearAuth class
+- [x] Move OAuth-specific logic to OAuthLinearAuth
+- [x] Simplify PatLinearAuth implementation
 
 ### Caching Implementation
 - [ ] Add caching layer for frequently accessed data:
