@@ -16,7 +16,8 @@ import {
 import {
   ProjectInput,
   ProjectResponse,
-  SearchProjectsResponse
+  SearchProjectsResponse,
+  ProjectMilestoneResponse
 } from '../features/projects/types/project.types.js';
 import {
   TeamResponse,
@@ -167,6 +168,28 @@ export class LinearGraphQLClient {
   async searchProjects(filter: { name?: { eq: string } }): Promise<SearchProjectsResponse> {
     const { SEARCH_PROJECTS_QUERY } = await import('./queries.js');
     return this.execute<SearchProjectsResponse>(SEARCH_PROJECTS_QUERY, { filter });
+  }
+
+  // Get project milestones
+  async getProjectMilestones(
+    filter?: any,
+    first: number = 50,
+    after?: string,
+    last?: number,
+    before?: string,
+    includeArchived: boolean = false,
+    orderBy: string = "createdAt"
+  ): Promise<ProjectMilestoneResponse> {
+    const { GET_PROJECT_MILESTONES_QUERY } = await import('./queries.js');
+    return this.execute<ProjectMilestoneResponse>(GET_PROJECT_MILESTONES_QUERY, {
+      filter,
+      first,
+      after,
+      last,
+      before,
+      includeArchived,
+      orderBy,
+    });
   }
 
   // Delete a single issue

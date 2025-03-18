@@ -419,4 +419,55 @@ export const toolSchemas = {
       required: ['issues'],
     },
   },
+
+  linear_get_project_milestones: {
+    name: 'linear_get_project_milestones',
+    description: 'Get milestones for a project with filtering and pagination',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        projectId: {
+          type: 'string',
+          description: 'Project identifier to filter milestones by project',
+          optional: true,
+        },
+        filter: {
+          type: 'object',
+          description: 'Filter for project milestones (id, name, targetDate, etc.)',
+          optional: true,
+        },
+        before: {
+          type: 'string',
+          description: 'Cursor for backward pagination (used with last)',
+          optional: true,
+        },
+        after: {
+          type: 'string',
+          description: 'Cursor for forward pagination (used with first)',
+          optional: true,
+        },
+        first: {
+          type: 'number',
+          description: 'Number of items to forward paginate (default: 50)',
+          optional: true,
+        },
+        last: {
+          type: 'number',
+          description: 'Number of items to backward paginate',
+          optional: true,
+        },
+        includeArchived: {
+          type: 'boolean',
+          description: 'Include archived milestones (default: false)',
+          optional: true,
+        },
+        orderBy: {
+          type: 'string',
+          description: 'Field to order by (createdAt or updatedAt, default: createdAt)',
+          optional: true,
+        },
+      },
+      required: [],
+    },
+  },
 };

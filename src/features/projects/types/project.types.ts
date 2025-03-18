@@ -60,3 +60,35 @@ export interface SearchProjectsResponse {
     nodes: Array<ProjectResponse['projectCreate']['project']>;
   };
 }
+
+/**
+ * Response for project milestones query
+ */
+export interface ProjectMilestoneResponse {
+  projectMilestones: {
+    pageInfo: {
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+      startCursor: string;
+      endCursor: string;
+    };
+      nodes: Array<{
+        id: string;
+        name: string;
+        description: string;
+        targetDate: string;
+        status: string;
+        url: string;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+  };
+}
+
+/**
+ * Filter for project milestones
+ */
+export interface ProjectMilestoneFilter {
+  // Filter properties based on Linear API
+  // This can be expanded as needed
+}

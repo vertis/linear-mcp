@@ -138,3 +138,42 @@ export const GET_PROJECT_QUERY = gql`
     }
   }
 `;
+
+export const GET_PROJECT_MILESTONES_QUERY = gql`
+  query GetProjectMilestones(
+    $filter: ProjectMilestoneFilter
+    $before: String
+    $after: String
+    $first: Int
+    $last: Int
+    $includeArchived: Boolean
+    $orderBy: PaginationOrderBy
+  ) {
+    projectMilestones(
+      filter: $filter
+      before: $before
+      after: $after
+      first: $first
+      last: $last
+      includeArchived: $includeArchived
+      orderBy: $orderBy
+    ) {
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      nodes {
+        id
+        name
+        description
+        targetDate
+        status
+        url
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;

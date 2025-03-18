@@ -135,4 +135,52 @@ export class ProjectHandler extends BaseHandler {
       this.handleError(error, 'search projects');
     }
   }
+
+  /**
+   * Gets milestones for a project with filtering and pagination.
+   */
+  async handleGetProjectMilestones(args: any): Promise<BaseToolResponse> {
+    try {
+      const client = this.verifyAuth();
+
+      // Extract pagination and filter parameters
+      const {
+        filter,
+        first = 50,
+        after,
+        last,
+        before,
+        includeArchived = false,
+        orderBy = "createdAt"
+      } = args;
+
+      // If projectId is provided in the filter, use it to filter by project
+      let milestoneFilter = filter || {};
+      if (args.projectId) {
+        // Add projectId to the filter if provided
+        milestoneFilter = {
+          ...milestoneFilter,
+          project: {
+            id: {
+              eq: args.projectId
+            }
+          }
+        };
+      }
+
+      const result = await client.getProjectMilestones(
+        milestoneFilter,
+        first,
+        after,
+        last,
+        before,
+        includeArchived,
+        orderBy
+      );
+
+      return this.createJsonResponse(result);
+    } catch (error) {
+      this.handleError(error, 'get project milestones');
+    }
+  }
 }

@@ -51,6 +51,7 @@ export class HandlerFactory {
       linear_create_project_with_issues: { handler: this.projectHandler, method: 'handleCreateProjectWithIssues' },
       linear_get_project: { handler: this.projectHandler, method: 'handleGetProject' },
       linear_search_projects: { handler: this.projectHandler, method: 'handleSearchProjects' },
+      linear_get_project_milestones: { handler: this.projectHandler, method: 'handleGetProjectMilestones' },
 
       // Team tools
       linear_get_teams: { handler: this.teamHandler, method: 'handleGetTeams' },
