@@ -177,3 +177,45 @@ export const GET_PROJECT_MILESTONES_QUERY = gql`
     }
   }
 `;
+
+export const GET_ISSUE_QUERY = gql`
+  query GetIssue($id: String!) {
+    issue(id: $id) {
+      id
+      identifier
+      title
+      description
+      url
+      state {
+        id
+        name
+        type
+        color
+      }
+      assignee {
+        id
+        name
+        email
+      }
+      team {
+        id
+        name
+        key
+      }
+      project {
+        id
+        name
+      }
+      priority
+      labels {
+        nodes {
+          id
+          name
+          color
+        }
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;

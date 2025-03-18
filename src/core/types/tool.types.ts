@@ -470,4 +470,19 @@ export const toolSchemas = {
       required: [],
     },
   },
+
+  linear_get_issue: {
+    name: 'linear_get_issue',
+    description: 'Get a single issue by ID',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+          description: 'Issue identifier (ID or key like ENG-123)',
+        },
+      },
+      required: ['id'],
+    },
+  },
 };

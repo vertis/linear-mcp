@@ -10,6 +10,7 @@ import {
   SearchIssuesInput,
   SearchIssuesResponse,
   DeleteIssueResponse,
+  GetIssueResponse,
   Issue,
   IssueBatchResponse
 } from '../features/issues/types/issue.types.js';
@@ -202,5 +203,11 @@ export class LinearGraphQLClient {
   async deleteIssues(ids: string[]): Promise<DeleteIssueResponse> {
     const { DELETE_ISSUES_MUTATION } = await import('./mutations.js');
     return this.execute<DeleteIssueResponse>(DELETE_ISSUES_MUTATION, { ids });
+  }
+
+  // Get a single issue by ID
+  async getIssue(id: string): Promise<GetIssueResponse> {
+    const { GET_ISSUE_QUERY } = await import('./queries.js');
+    return this.execute<GetIssueResponse>(GET_ISSUE_QUERY, { id });
   }
 }
