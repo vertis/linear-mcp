@@ -214,6 +214,19 @@ export const GET_ISSUE_QUERY = gql`
           color
         }
       }
+      comments {
+        nodes {
+          id
+          body
+          user {
+            id
+            name
+            email
+          }
+          createdAt
+          updatedAt
+        }
+      }
       createdAt
       updatedAt
     }
