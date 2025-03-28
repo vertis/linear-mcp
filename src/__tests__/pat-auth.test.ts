@@ -38,7 +38,7 @@ describe('PatLinearAuth', () => {
       }).not.toThrow();
 
       expect(LinearClient).toHaveBeenCalledWith({
-        accessToken: 'test-access-token'
+        apiKey: 'test-access-token' // Changed from accessToken to apiKey
       });
     });
 
@@ -72,7 +72,7 @@ describe('PatLinearAuth', () => {
       patAuth.initialize(validPatConfig);
       expect(patAuth.getClient()).toBeDefined();
       expect(LinearClient).toHaveBeenCalledWith({
-        accessToken: 'test-access-token'
+        apiKey: 'test-access-token' // Changed from accessToken to apiKey
       });
     });
 

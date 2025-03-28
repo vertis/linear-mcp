@@ -22,6 +22,7 @@ import {
   LabelInput,
   LabelResponse
 } from '../features/teams/types/team.types';
+import { CREATE_ISSUE_MUTATION } from '../graphql/mutations.js'; // Import the mutation
 import {
   UserResponse
 } from '../features/users/types/user.types';
@@ -141,9 +142,9 @@ describe('LinearGraphQLClient', () => {
       
       const result: CreateIssueResponse = await graphqlClient.createIssue(input);
 
-      // Verify single mutation call with array input
+      // Verify single mutation call with correct input object
       expect(mockRawRequest).toHaveBeenCalledWith(
-        expect.any(String),
+        CREATE_ISSUE_MUTATION.loc?.source.body || '', // Expect the extracted string body
         expect.objectContaining({
           input: input
         })

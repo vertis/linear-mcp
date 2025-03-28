@@ -214,7 +214,7 @@ export const GET_ISSUE_QUERY = gql`
           color
         }
       }
-      comments {
+      comments { # Existing comments field within issue
         nodes {
           id
           body
@@ -229,6 +229,51 @@ export const GET_ISSUE_QUERY = gql`
       }
       createdAt
       updatedAt
+    }
+  }
+`;
+
+// --- NEW COMMENT QUERY ---
+
+export const GET_COMMENTS_QUERY = gql`
+  query GetComments(
+    $filter: CommentFilter # Assuming a CommentFilter type exists
+    $first: Int
+    $after: String
+    $orderBy: PaginationOrderBy
+  ) {
+    comments(
+      filter: $filter
+      first: $first
+      after: $after
+      orderBy: $orderBy
+    ) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        id
+        body
+        createdAt
+        updatedAt
+        issue {
+          id
+          identifier
+        }
+        user {
+          id
+          name
+        }
+        parent { # Include parent for threading context
+          id
+        }
+        children { # Include children for threading context
+          nodes {
+            id
+          }
+        }
+      }
     }
   }
 `;

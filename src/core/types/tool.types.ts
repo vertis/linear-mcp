@@ -485,4 +485,95 @@ export const toolSchemas = {
       required: ['id'],
     },
   },
+
+  // --- NEW COMMENT TOOL SCHEMAS ---
+
+  linear_get_comments: {
+    name: 'linear_get_comments',
+    description: 'Get comments, optionally filtered by issue, with pagination.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        issueId: {
+          type: 'string',
+          description: 'Filter comments by a specific issue ID.',
+          optional: true,
+        },
+        first: {
+          type: 'number',
+          description: 'Number of comments to return (default: 50).',
+          optional: true,
+        },
+        after: {
+          type: 'string',
+          description: 'Cursor for pagination.',
+          optional: true,
+        },
+        orderBy: {
+          type: 'string',
+          description: 'Field to order by (e.g., createdAt).',
+          optional: true,
+        },
+      },
+      required: [], // No fields strictly required, but issueId is common
+    },
+  },
+
+  linear_create_comment: {
+    name: 'linear_create_comment',
+    description: 'Create a new comment on an issue, optionally as a reply to another comment.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        issueId: {
+          type: 'string',
+          description: 'The ID of the issue to add the comment to.',
+        },
+        body: {
+          type: 'string',
+          description: 'The content of the comment (Markdown supported).',
+        },
+        parentId: {
+          type: 'string',
+          description: 'The ID of the parent comment if this is a reply.',
+          optional: true,
+        },
+      },
+      required: ['issueId', 'body'],
+    },
+  },
+
+  linear_update_comment: {
+    name: 'linear_update_comment',
+    description: 'Update the body of an existing comment.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        commentId: {
+          type: 'string',
+          description: 'The ID of the comment to update.',
+        },
+        body: {
+          type: 'string',
+          description: 'The new content for the comment body.',
+        },
+      },
+      required: ['commentId', 'body'],
+    },
+  },
+
+  linear_delete_comment: {
+    name: 'linear_delete_comment',
+    description: 'Delete an existing comment.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        commentId: {
+          type: 'string',
+          description: 'The ID of the comment to delete.',
+        },
+      },
+      required: ['commentId'],
+    },
+  },
 };

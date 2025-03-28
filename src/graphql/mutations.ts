@@ -110,3 +110,57 @@ export const CREATE_ISSUE_LABELS = gql`
     }
   }
 `;
+
+// --- NEW COMMENT MUTATIONS ---
+
+export const CREATE_COMMENT_MUTATION = gql`
+  mutation CommentCreate($input: CommentCreateInput!) {
+    commentCreate(input: $input) {
+      success
+      comment {
+        id
+        body
+        createdAt
+        issue {
+          id
+        }
+        user {
+          id
+          name
+        }
+        # Include parentId if supporting replies directly in create
+        # parent {
+        #   id
+        # }
+      }
+      lastSyncId
+    }
+  }
+`;
+
+export const UPDATE_COMMENT_MUTATION = gql`
+  mutation CommentUpdate($id: String!, $input: CommentUpdateInput!) {
+    commentUpdate(id: $id, input: $input) {
+      success
+      comment {
+        id
+        body
+        editedAt
+        user {
+          id
+          name
+        }
+      }
+      lastSyncId
+    }
+  }
+`;
+
+export const DELETE_COMMENT_MUTATION = gql`
+  mutation CommentDelete($id: String!) {
+    commentDelete(id: $id) {
+      success
+      lastSyncId
+    }
+  }
+`;
